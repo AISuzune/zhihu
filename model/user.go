@@ -5,6 +5,7 @@ import (
 )
 
 type User struct {
+	ID       int    `json:"id"`
 	Username string `form:"username" json:"username" binding:"required"`
 	Password string `form:"password" json:"password" binding:"required"`
 }
