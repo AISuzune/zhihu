@@ -9,8 +9,8 @@ func InitRouter() {
 	r := gin.Default()
 	r.Use(middleware.CORS())
 
-	r.POST("/api/user/register", register) // 注册
-	r.POST("/api/user/login", login)       // 登录
+	r.POST("/api/register", register) // 注册
+	r.POST("/api/login", login)       // 登录
 
 	UserRouter := r.Group("/api/user")
 	{
@@ -18,14 +18,23 @@ func InitRouter() {
 		UserRouter.GET("/get", getUsernameFromToken)
 	}
 
-	r.POST("/question", addQuestion)
-	r.POST("/answer", addAnswer)
-	r.GET("/question", getQuestions)
-	r.GET("/answer", getAnswers)
-	r.DELETE("/question", deleteQuestion)
-	r.DELETE("/answer", deleteAnswer)
-	r.PUT("/question", updateQuestion)
-	r.PUT("/answer", updateAnswer)
+	QuestionRouter := r.Group("/api")
+	{
+		UserRouter.Use(middleware.JWTAuthMiddleware())
+		QuestionRouter.POST("/question", addQuestion)
+		QuestionRouter.GET("/question", getQuestions)
+		QuestionRouter.DELETE("/question", deleteQuestion)
+		QuestionRouter.PUT("/question", updateQuestion)
+	}
+
+	AnswerRouter := r.Group("/api")
+	{
+		UserRouter.Use(middleware.JWTAuthMiddleware())
+		AnswerRouter.POST("/answer", addAnswer)
+		AnswerRouter.GET("/answer", getAnswers)
+		AnswerRouter.DELETE("/answer", deleteAnswer)
+		AnswerRouter.PUT("/answer", updateAnswer)
+	}
 
 	err := r.Run(":8088")
 	if err != nil {

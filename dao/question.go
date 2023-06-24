@@ -6,21 +6,12 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"time"
+	g "zhihu/global"
 	"zhihu/model"
 )
 
 // AddQuestion 向数据库中添加问题
 func AddQuestion(username string, content string) error {
-	db, err := GetDB()
-	if err != nil {
-		return err
-	}
-	defer func(db *sql.DB) {
-		err := db.Close()
-		if err != nil {
-			log.Println(err)
-		}
-	}(db)
 	// 准备插入语句
 	insertQuery := "INSERT INTO questions (content, username, create_time, update_time) VALUES ( ?, ?, ?, ?)"
 
@@ -28,7 +19,7 @@ func AddQuestion(username string, content string) error {
 	now := time.Now()
 
 	// 执行插入操作
-	_, err = db.Exec(insertQuery, content, username, now, now)
+	_, err = g.MysqlDB.Exec(insertQuery, content, username, now, now)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -40,22 +31,11 @@ func AddQuestion(username string, content string) error {
 
 // GetUserQuestions 获取指定用户名下的所有问题
 func GetUserQuestions(username string) ([]model.Question, error) {
-	db, err := GetDB()
-	if err != nil {
-		return nil, err
-	}
-	defer func(db *sql.DB) {
-		err := db.Close()
-		if err != nil {
-			log.Println(err)
-		}
-	}(db)
-
 	// 准备查询语句
 	selectQuery := "SELECT * FROM questions WHERE username = ?"
 
 	// 执行查询操作
-	rows, err := db.Query(selectQuery, username)
+	rows, err := g.MysqlDB.Query(selectQuery, username)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -97,19 +77,8 @@ func GetUserQuestions(username string) ([]model.Question, error) {
 
 // DeleteQuestion 删除指定用户名下的问题及相关的回答
 func DeleteQuestion(username string, questionID int) error {
-	db, err := GetDB()
-	if err != nil {
-		return err
-	}
-	defer func(db *sql.DB) {
-		err := db.Close()
-		if err != nil {
-			log.Println(err)
-		}
-	}(db)
-
 	// 开启事务
-	tx, err := db.Begin()
+	tx, err := g.MysqlDB.Begin()
 	if err != nil {
 		log.Println(err)
 		return err
@@ -118,15 +87,6 @@ func DeleteQuestion(username string, questionID int) error {
 	// 删除问题
 	deleteQuestionQuery := "DELETE FROM questions WHERE id = ? AND username = ?"
 	_, err = tx.Exec(deleteQuestionQuery, questionID, username)
-	if err != nil {
-		log.Println(err)
-		_ = tx.Rollback()
-		return err
-	}
-
-	// 删除问题相关的回答
-	deleteAnswersQuery := "DELETE FROM answers WHERE qid = ?"
-	_, err = tx.Exec(deleteAnswersQuery, questionID)
 	if err != nil {
 		log.Println(err)
 		_ = tx.Rollback()
@@ -146,17 +106,6 @@ func DeleteQuestion(username string, questionID int) error {
 
 // UpdateQuestion 修改指定用户名下的问题内容
 func UpdateQuestion(username string, questionID int, content string) error {
-	db, err := GetDB()
-	if err != nil {
-		return err
-	}
-	defer func(db *sql.DB) {
-		err := db.Close()
-		if err != nil {
-			log.Println(err)
-		}
-	}(db)
-
 	// 准备更新语句
 	updateQuery := "UPDATE questions SET content = ?, update_time = ? WHERE id = ? AND username = ?"
 
@@ -164,7 +113,7 @@ func UpdateQuestion(username string, questionID int, content string) error {
 	now := time.Now()
 
 	// 执行更新操作
-	_, err = db.Exec(updateQuery, content, now, questionID, username)
+	_, err = g.MysqlDB.Exec(updateQuery, content, now, questionID, username)
 	if err != nil {
 		log.Println(err)
 		return err
